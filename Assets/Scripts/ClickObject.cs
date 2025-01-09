@@ -17,6 +17,7 @@ public class ClickObject : MonoBehaviour
     public GameObject panel_label_x;
     public GameObject panel_label_y;
 
+    private static readonly Color unhighlightColor = new Color(1.0f, 1.0f, 1.0f); // 元の色
     private static readonly Color highlightColor = new Color(0.973f, 0.953f, 0.549f); // ハイライトの色
     private SpriteRenderer spriteRenderer;
     private Color originalColor;
@@ -189,7 +190,7 @@ public class ClickObject : MonoBehaviour
                 ClickObject lastClickObject = lastHighlighted.GetComponent<ClickObject>();
                 if (lastClickObject != null)
                 {
-                    lastRenderer.color = lastClickObject.originalColor;
+                    lastRenderer.color = unhighlightColor;
                 }
             }
             lastHighlighted.tag = "Untagged";
