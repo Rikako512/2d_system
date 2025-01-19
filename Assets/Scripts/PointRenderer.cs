@@ -8,21 +8,15 @@ using Debug = UnityEngine.Debug;
 
 public class PointRenderer : MonoBehaviour
 {
-    //public bool renderPoints = false;
     //********Public Variables********
-    // Bools for editor options
     public bool renderParticles = true;
-    public bool renderPrefabsWithColor = true;
 
-    // Indices for columns to be assigned
     public int column1 = 0;
     public int column2 = 1;
 
-    // Full column names from CSV (as Dictionary Keys)
     public string xColumnName;
     public string yColumnName;
 
-    // Scale of particlePoints within graph, WARNING: Does not scale with graph frame
     private float plotScale = 10;
 
     // Scale of the prefab particlePoints
@@ -33,21 +27,14 @@ public class PointRenderer : MonoBehaviour
     [Range(0.0f, 2.0f)]
     public float particleScale = 5.0f;
 
-    // The prefab for the data particlePoints that will be instantiated
     public GameObject PointPrefab;
 
-    // Object which will contain instantiated prefabs in hiearchy
     public GameObject PointHolder;
-
-    // Objects which will contain axis labels in hiearchy
     public GameObject XLabels;
     public GameObject YLabels;
 
-    // Color for the glow around the particlePoints
     private Color GlowColor;
 
-    //********Private Variables********
-    // Minimum and maximum values of columns
     private float xMin;
     private float yMin;
 
@@ -60,12 +47,17 @@ public class PointRenderer : MonoBehaviour
     // Particle system for holding point particles
     private ParticleSystem.Particle[] particlePoints;
 
-    public void RenderPoints()
+    public void PlotDataPoints(int newColumn1, int newColumn2)
     {
-        Debug.Log("---------- PointRenderer開始 ----------");
+        Debug.Log("---------- PlotDataPoints開始 ----------");
+        
+        column1 = newColumn1;
+        column2 = newColumn2;
 
+        // Store dictionary keys (column names in CSV) in a list
         List<string> columnList = new List<string>(CSVData.pointList[1].Keys);
 
+        // Assign column names according to index indicated in columnList
         xColumnName = columnList[column1];
         yColumnName = columnList[column2];
 
@@ -75,32 +67,26 @@ public class PointRenderer : MonoBehaviour
         xMin = Convert.ToSingle(CSVData.min_maxList[xColumnName][0]);
         yMin = Convert.ToSingle(CSVData.min_maxList[yColumnName][0]);
 
-
         AssignLabels();
         PlacePrefabPoints();
-        /*
-        if (renderPoints == true)
-        {
-            AssignLabels();
-            PlacePrefabPoints();
-        }
-        */
 
+        // If statement to turn particles on and off
         if (renderParticles == true)
         {
+            // Call CreateParticles() for particle system
             CreateParticles();
 
+            // Set particle system, for point glow- depends on CreateParticles()
             GetComponent<ParticleSystem>().SetParticles(particlePoints, particlePoints.Length);
         }
 
-        Debug.Log("---------- PointRenderer終了 ----------");
-
+        Debug.Log("---------- PlotDataPoints終了：(" + newColumn1 + ", " + newColumn2 + ") ----------");
     }
 
     // Places the prefabs according to values read in
     private void PlacePrefabPoints()
     {
-        Debug.Log("---------- PlacePrefabPoints 開始 ----------");
+        //Debug.Log("---------- PlacePrefabPoints 開始 ----------");
         // Get count (number of rows in table)
         rowCount = CSVData.pointList.Count;
 
@@ -112,7 +98,7 @@ public class PointRenderer : MonoBehaviour
             float y = (Convert.ToSingle(CSVData.pointList[i][yColumnName]) - yMin) / (yMax - yMin);
 
             // Create vector 3 for positioning particlePoints
-            Vector2 position = new Vector2(x, y) * plotScale;
+            Vector3 position = new Vector2(x, y) * plotScale;
 
             //instantiate as gameobject variable so that it can be manipulated within loop
             GameObject dataPoint = Instantiate(PointPrefab, Vector2.zero, Quaternion.identity);
@@ -126,27 +112,9 @@ public class PointRenderer : MonoBehaviour
             dataPoint.transform.localScale = new Vector2(pointScale, pointScale);
 
             // Converts index to string to name the point the index number
-            string dataPointName = i.ToString();
-
-            // Assigns name to the prefab
-            dataPoint.transform.name = dataPointName;
-
-            // データ点の色を指定
-            if (renderPrefabsWithColor == true)
-            {
-                // Sets color according to x/y/z value
-                dataPoint.GetComponent<Renderer>().material.color = new Color(x, y, 1.0f);
-
-                // Activate emission color keyword so we can modify emission color
-                dataPoint.GetComponent<Renderer>().material.EnableKeyword("_EMISSION");
-
-                dataPoint.GetComponent<Renderer>().material.SetColor("_EmissionColor", new Color(x, y, 1.0f));
-
-            }
-
+            dataPoint.transform.name = i.ToString();
         }
 
-        Debug.Log("---------- PlacePrefabPoints 終了 ----------");
     }
 
     private void CreateParticles()
@@ -155,7 +123,7 @@ public class PointRenderer : MonoBehaviour
 
         particlePoints = new ParticleSystem.Particle[rowCount];
 
-        for (int i = 0; i < CSVData.pointList.Count; i++)
+        for (int i = 0; i < rowCount; i++)
         {
             // Convert object from list into float
             float x = (Convert.ToSingle(CSVData.pointList[i][xColumnName]) - xMin) / (xMax - xMin);
@@ -183,6 +151,81 @@ public class PointRenderer : MonoBehaviour
         YLabels.transform.Find("Y_Min_Lab").gameObject.GetComponent<TextMesh>().text = yMin.ToString("0.0");
         YLabels.transform.Find("Y_Mid_Lab").gameObject.GetComponent<TextMesh>().text = (yMin + (yMax - yMin) / 2f).ToString("0.0");
         YLabels.transform.Find("Y_Max_Lab").gameObject.GetComponent<TextMesh>().text = yMax.ToString("0.0");
+    }
+
+    public void UpdateDataPoints(int newColumn1, int newColumn2)
+    {
+        column1 = newColumn1;
+        column2 = newColumn2;
+
+        // 列名を更新
+        List<string> columnList = new List<string>(CSVData.pointList[1].Keys);
+        xColumnName = columnList[column1];
+        yColumnName = columnList[column2];
+
+        // 最小値と最大値を更新
+        xMax = Convert.ToSingle(CSVData.min_maxList[xColumnName][1]);
+        yMax = Convert.ToSingle(CSVData.min_maxList[yColumnName][1]);
+        xMin = Convert.ToSingle(CSVData.min_maxList[xColumnName][0]);
+        yMin = Convert.ToSingle(CSVData.min_maxList[yColumnName][0]);
+
+        // データ点の位置を更新
+        StartCoroutine(MoveDataPoints());
+        
+        if (renderParticles)
+        {
+            UpdateParticles();
+        }
+
+        AssignLabels();
+        Debug.Log("---------- UpdateDataPoints終了：(" + column1 + ", " + column2 + ") ----------");
+    }
+
+    private void UpdateParticles()
+    {
+        for (int i = 0; i < rowCount; i++)
+        {
+            float x = (Convert.ToSingle(CSVData.pointList[i][xColumnName]) - xMin) / (xMax - xMin);
+            float y = (Convert.ToSingle(CSVData.pointList[i][yColumnName]) - yMin) / (yMax - yMin);
+
+            particlePoints[i].position = new Vector2(x, y) * plotScale;
+            particlePoints[i].startColor = new Color(x, y, 1.0f);
+        }
+
+        GetComponent<ParticleSystem>().SetParticles(particlePoints, particlePoints.Length);
+    }
+
+    private IEnumerator MoveDataPoints()
+    {
+        float duration = 1.0f; // アニメーション時間（秒）
+        float elapsedTime = 0f;
+
+        Vector3[] startPositions = new Vector3[rowCount];
+        Vector3[] endPositions = new Vector3[rowCount];
+
+        for (int i = 0; i < rowCount; i++)
+        {
+            startPositions[i] = PointHolder.transform.GetChild(i).localPosition;
+            
+            float x = (Convert.ToSingle(CSVData.pointList[i][xColumnName]) - xMin) / (xMax - xMin);
+            float y = (Convert.ToSingle(CSVData.pointList[i][yColumnName]) - yMin) / (yMax - yMin);
+            endPositions[i] = new Vector2(x, y) * plotScale;
+        }
+
+        while (elapsedTime < duration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsedTime / duration);
+
+            for (int i = 0; i < rowCount; i++)
+            {
+                Vector3 newPosition = Vector3.Lerp(startPositions[i], endPositions[i], t);
+                PointHolder.transform.GetChild(i).localPosition = newPosition;
+            }
+
+            yield return null;
+        }
 
     }
+
 }

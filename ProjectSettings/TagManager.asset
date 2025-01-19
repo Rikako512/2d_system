@@ -7,6 +7,9 @@ TagManager:
   - Scatterplot
   - Label
   - highlighted
+  - selected
+  - scrolltext
+  - scrollheader
   layers:
   - Default
   - TransparentFX
